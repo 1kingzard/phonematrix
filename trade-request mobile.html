@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Trade-In Comparison</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: white;
+            -webkit-text-size-adjust: 100%;
+        }
+        .device-card {
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+        }
+        .device-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .price-difference {
+            background: linear-gradient(135deg, #d81570, #e83a8e);
+            color: white;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .os-indicator {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+        .ios-indicator {
+            background-color: #000;
+            color: white;
+        }
+        .android-indicator {
+            background-color: #3DDC84;
+            color: white;
+        }
+        .shipping-note {
+            background-color: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 12px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 16px;
+        }
+        .trade-arrow {
+            font-size: 2rem;
+            color: #d81570;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .currency-selector {
+            background-color: #fce4f1;
+            border-radius: 20px;
+            padding: 4px;
+        }
+        .currency-option {
+            padding: 6px 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .currency-option.active {
+            background-color: #d81570;
+            color: white;
+        }
+        .condition-checklist {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            border: 1px solid #e5e7eb;
+        }
+        .condition-item {
+            margin-bottom: 12px;
+        }
+        .repair-cost {
+            color: #ef4444;
+            font-size: 0.8rem;
+            margin-left: 8px;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        .section-container {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #fef2f8, #fce4f1);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #d81570;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .logo-img {
+            height: 35px;
+            width: auto;
+        }
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: white;
+            z-index: 100;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .mobile-menu.active {
+            display: block;
+        }
+        .menu-toggle {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+            }
+            .desktop-nav {
+                display: none;
+            }
+            .hero-section {
+                padding: 1.5rem;
+            }
+            .hero-title {
+                font-size: 2rem;
+            }
+            .hero-image {
+                display: none;
+            }
+            .currency-selector {
+                font-size: 0.9rem;
+            }
+            .section-container {
+                padding: 1rem;
+            }
+            .modal-content {
+                padding: 1rem;
+            }
+            .condition-checklist {
+                padding: 12px;
+            }
+        }
+        .select-wrapper {
+            position: relative;
+        }
+        .select-wrapper::after {
+            content: "▼";
+            font-size: 0.8rem;
+            color: #6b7280;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            padding-right: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Navigation -->
+    <nav class="bg-white shadow-sm py-3 px-4 sticky top-0 z-50 flex justify-between items-center">
+        <!-- Logo -->
+        <div class="flex items-center">
+            <img src="https://i.imgur.com/TcJEewx.png" 
+                 alt="PhoneMatrix Logo" 
+                 class="logo-img">
+        </div>
+        
+        <!-- Mobile Menu Toggle -->
+        <button id="menuToggle" class="menu-toggle text-gray-600">
+            <i class="fas fa-bars text-2xl"></i>
+        </button>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div id="mobileMenu" class="mobile-menu">
+        <div class="flex justify-between items-center mb-8">
+            <img src="https://i.imgur.com/TcJEewx.png" 
+                 alt="PhoneMatrix Logo" 
+                 class="logo-img">
+            <button id="closeMenu" class="text-gray-600">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+        
+        <div class="flex flex-col space-y-6">
+            <a href="trade-request.html" class="text-[#d81570] font-medium text-lg border-b-2 border-[#d81570] pb-1">Trade-In</a>
+            <a href="price-list.html" class="text-gray-600 hover:text-[#d81570] font-medium text-lg">Price List</a>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero-section mx-4 my-4 p-6">
+        <div>
+            <h1 class="hero-title text-3xl font-bold text-gray-800 mb-3">Upgrade Your Device <span class="text-[#d81570]">Effortlessly</span></h1>
+            <p class="text-base text-gray-600 mb-6">Trade in your current device and get credit toward your next purchase. Our simple process helps you find the best value for your device.</p>
+            
+            <div class="flex flex-col gap-3">
+                <button onclick="document.getElementById('trade-in-comparison').scrollIntoView({ behavior: 'smooth' })" 
+                        class="bg-[#d81570] hover:bg-[#c01363] text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
+                    <i class="fas fa-exchange-alt mr-2"></i> Start Trade-In
+                </button>                  
+                <a href="price-list.html" 
+                   class="bg-white hover:bg-gray-100 text-[#d81570] font-bold py-3 px-6 rounded-lg border border-[#d81570] shadow-sm transition duration-300 flex items-center justify-center">
+                    <i class="fas fa-list-alt mr-2"></i> View Price List
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-4" id="trade-in-comparison">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2"><i class="fas fa-exchange-alt text-pink-600 mr-2"></i>Device Trade-In Comparison</h1>
+            <p class="text-gray-600 mx-auto">Trade in your current device and upgrade to something new. See exactly how much you'll pay (or get back) for your upgrade.</p>
+            
+            <!-- Currency Selector -->
+            <div class="mt-4 flex justify-center">
+                <div class="currency-selector flex items-center">
+                    <div class="currency-option active" data-currency="USD">
+                        <i class="fas fa-dollar-sign mr-1"></i> USD
+                    </div>
+                    <div class="currency-option" data-currency="JMD">
+                        <i class="fas fa-dollar-sign mr-1"></i> JMD
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Trade Comparison Section -->
+        <div class="section-container p-4 mb-6">
+            <!-- Current Device Selection -->
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
+                <h2 class="text-lg font-semibold mb-3 text-gray-800"><i class="fas fa-mobile-screen mr-2 text-pink-600"></i>Your Current Device</h2>
+                
+                <div class="mb-3 select-wrapper">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Operating System</label>
+                    <select id="currentOS" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                        <option value="all">Select OS</option>
+                        <option value="iOS">iOS</option>
+                        <option value="Android">Android</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3 select-wrapper">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Storage Capacity</label>
+                    <select id="currentStorage" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500" disabled>
+                        <option value="all">Select Storage</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3 select-wrapper">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Device Model</label>
+                    <select id="currentDevice" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500" disabled>
+                        <option value="">Select your device</option>
+                    </select>
+                </div>
+                
+                <div class="select-wrapper">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Device Condition</label>
+                    <select id="currentCondition" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500" disabled>
+                        <option value="">Select condition</option>
+                        <option value="Like New">Like New</option>
+                        <option value="Good">Good</option>
+                        <option value="Fair">Fair</option>
+                        <option value="Poor">Poor</option>
+                    </select>
+                </div>
+                
+                <!-- Device Condition Checklist -->
+                <div id="conditionChecklist" class="condition-checklist hidden">
+                    <h3 class="text-sm font-medium text-gray-700 mb-3">Device Condition Details</h3>
+                    <p class="text-xs text-gray-500 mb-3">Please check all that apply to your device:</p>
+                    
+                    <div class="condition-item">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="deviceCondition" value="camera" class="rounded border-gray-300 text-pink-600 focus:ring-pink-500">
+                            <span class="ml-2 text-sm text-gray-700">Camera is working properly</span>
+                            <span class="repair-cost">-$50 repair cost</span>
+                        </label>
+                    </div>
+                    
+                    <div class="condition-item">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="deviceCondition" value="speaker" class="rounded border-gray-300 text-pink-600 focus:ring-pink-500">
+                            <span class="ml-2 text-sm text-gray-700">Speakers are working properly</span>
+                            <span class="repair-cost">-$30 repair cost</span>
+                        </label>
+                    </div>
+                    
+                    <div class="condition-item">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="deviceCondition" value="screen" class="rounded border-gray-300 text-pink-600 focus:ring-pink-500">
+                            <span class="ml-2 text-sm text-gray-700">No cracks on screen</span>
+                            <span class="repair-cost">-$100 repair cost</span>
+                        </label>
+                    </div>
+                    
+                    <div class="condition-item">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="deviceCondition" value="back" class="rounded border-gray-300 text-pink-600 focus:ring-pink-500">
+                            <span class="ml-2 text-sm text-gray-700">No cracks on back glass</span>
+                            <span class="repair-cost">-$80 repair cost</span>
+                        </label>
+                    </div>
+                    
+                    <div class="condition-item">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="deviceCondition" value="battery" class="rounded border-gray-300 text-pink-600 focus:ring-pink-500">
+                            <span class="ml-2 text-sm text-gray-700">Battery health above 85%</span>
+                            <span class="repair-cost">-$60 repair cost</span>
+                        </label>
+                    </div>
+                    
+                    <div class="condition-item">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="deviceCondition" value="unlocked" class="rounded border-gray-300 text-pink-600 focus:ring-pink-500">
+                            <span class="ml-2 text-sm text-gray-700">Device is unlocked</span>
+                            <span class="repair-cost">-$40 repair cost</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Desired Device Selection -->
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h2 class="text-lg font-semibold mb-3 text-gray-800"><i class="fas fa-mobile-alt mr-2 text-pink-600"></i>Desired Device</h2>
+                
+                <div class="mb-3 select-wrapper">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Operating System</label>
+                    <select id="desiredOS" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                        <option value="all">Select OS</option>
+                        <option value="iOS">iOS</option>
+                        <option value="Android">Android</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3 select-wrapper">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Storage Capacity</label>
+                    <select id="desiredStorage" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500" disabled>
+                        <option value="all">Select Storage</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3 select-wrapper">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Device Model</label>
+                    <select id="desiredDevice" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500" disabled>
+                        <option value="">Select desired device</option>
+                    </select>
+                </div>
+                
+                <div class="select-wrapper">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Device Condition</label>
+                    <select id="desiredCondition" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500" disabled>
+                        <option value="">Select condition</option>
+                        <option value="Like New">Like New</option>
+                        <option value="Good">Good</option>
+                        <option value="Fair">Fair</option>
+                        <option value="Poor">Poor</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Price Comparison Result -->
+            <div id="priceComparison" class="mt-6 hidden">
+                <div class="bg-pink-50 rounded-lg p-4 border border-pink-100">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3"><i class="fas fa-calculator mr-2 text-pink-600"></i>Trade-In Value</h3>
+                    
+                    <div class="grid grid-cols-1 gap-4">
+                        <!-- Current Device Value -->
+                        <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                            <p class="text-sm text-gray-500">Your Device Value</p>
+                            <p id="currentDeviceValue" class="text-xl font-bold text-gray-800">$0</p>
+                            <p id="currentDeviceInfo" class="text-xs text-gray-500 mt-1"></p>
+                            <p id="repairDeductions" class="text-xs text-red-500 mt-1"></p>
+                        </div>
+                        
+                        <!-- Desired Device Price -->
+                        <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                            <p class="text-sm text-gray-500">New Device Price</p>
+                            <p id="desiredDevicePrice" class="text-xl font-bold text-gray-800">$0</p>
+                            <p id="desiredDeviceInfo" class="text-xs text-gray-500 mt-1"></p>
+                        </div>
+                        
+                        <!-- Price Difference -->
+                        <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                            <p class="text-sm text-gray-500">Price Difference</p>
+                            <p id="priceDifference" class="text-2xl font-bold">$0</p>
+                            <p id="differenceDescription" class="text-xs mt-1"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Conversion Rate Info -->
+                    <div class="mt-3 text-center text-sm text-gray-600">
+                        <p id="conversionRateInfo">Conversion rate: 1 USD = 1 USD</p>
+                    </div>
+                    
+                    <!-- Shipping Note -->
+                    <div class="shipping-note mt-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-shipping-fast text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">Shipping Information</p>
+                                <p class="text-xs text-gray-600 mt-1">
+                                    <span class="font-semibold">Free shipping</span> available for US customers. 
+                                    <span class="font-semibold">30% shipping fee</span> applies to Jamaica.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- CTA Button -->
+                    <div class="mt-4 text-center">
+                        <button id="tradeButton" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 w-full">
+                            <i class="fas fa-sync-alt mr-2"></i>Complete Trade
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Popular Trade Options -->
+        <div class="section-container p-4">
+            <h2 class="text-lg font-semibold mb-3 text-gray-800"><i class="fas fa-star mr-2 text-pink-600"></i>Popular Trade Options</h2>
+            
+            <div id="loadingPopularTrades" class="loading-spinner"></div>
+            <div class="grid grid-cols-1 gap-4" id="popularTrades">
+                <!-- Popular trade options will be populated by JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <!-- User Details Modal -->
+    <div id="userDetailsModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Complete Your Trade Request</h3>
+                <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="userDetailsForm" class="space-y-3">
+                <div>
+                    <label for="fullName" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input type="text" id="fullName" name="fullName" required 
+                           class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                </div>
+                
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                    <input type="email" id="email" name="email" required 
+                           class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                </div>
+                
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" required 
+                           class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                </div>
+                
+                <div>
+                    <label for="address" class="block text-sm font-medium text-gray-700 mb-1">Shipping Address</label>
+                    <textarea id="address" name="address" rows="3" required 
+                              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500"></textarea>
+                </div>
+                
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">
+                        <i class="fas fa-paper-plane mr-2"></i>Submit Trade Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                    <i class="fas fa-check text-green-600 text-xl"></i>
+                </div>
+                <h3 id="confirmationTitle" class="text-lg font-medium text-gray-900 mb-2">Trade Request Submitted!</h3>
+                <div class="mt-2">
+                    <p id="confirmationMessage" class="text-sm text-gray-500">
+                        Your trade request has been submitted successfully. A confirmation has been sent to your email.
+                    </p>
+                    <div class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p class="text-sm font-medium text-gray-700">Reference Number:</p>
+                        <p id="referenceNumber" class="text-xl font-bold text-pink-600 mt-1">TR-12345678</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button id="closeConfirmation" class="w-full px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Currency conversion rates (example rates)
+        const conversionRates = {
+            USD: { rate: 1, symbol: '$' },
+            JMD: { rate: 154.5, symbol: 'J$' }
+        };  
+        
+        // Repair costs (placeholder values)
+        const repairCosts = {
+            camera: 50,
+            speaker: 30,
+            screen: 100,
+            back: 80,
+            battery: 60,
+            unlocked: 40
+        };
+        
+        // Current selected currency
+        let currentCurrency = 'USD';
+        
+        // Processed device data
+        let deviceData = [];
+        
+        // DOM Elements
+        const currentOS = document.getElementById('currentOS');
+        const currentStorage = document.getElementById('currentStorage');
+        const currentDevice = document.getElementById('currentDevice');
+        const currentCondition = document.getElementById('currentCondition');
+        const desiredOS = document.getElementById('desiredOS');
+        const desiredStorage = document.getElementById('desiredStorage');
+        const desiredDevice = document.getElementById('desiredDevice');
+        const desiredCondition = document.getElementById('desiredCondition');
+        const priceComparison = document.getElementById('priceComparison');
+        const currentDeviceValue = document.getElementById('currentDeviceValue');
+        const currentDeviceInfo = document.getElementById('currentDeviceInfo');
+        const repairDeductions = document.getElementById('repairDeductions');
+        const desiredDevicePrice = document.getElementById('desiredDevicePrice');
+        const desiredDeviceInfo = document.getElementById('desiredDeviceInfo');
+        const priceDifference = document.getElementById('priceDifference');
+        const differenceDescription = document.getElementById('differenceDescription');
+        const tradeButton = document.getElementById('tradeButton');
+        const popularTrades = document.getElementById('popularTrades');
+        const conversionRateInfo = document.getElementById('conversionRateInfo');
+        const currencyOptions = document.querySelectorAll('.currency-option');
+        const conditionChecklist = document.getElementById('conditionChecklist');
+        const conditionCheckboxes = document.querySelectorAll('input[name="deviceCondition"]');
+        const userDetailsModal = document.getElementById('userDetailsModal');
+        const closeModal = document.getElementById('closeModal');
+        const userDetailsForm = document.getElementById('userDetailsForm');
+        const confirmationModal = document.getElementById('confirmationModal');
+        const closeConfirmation = document.getElementById('closeConfirmation');
+        const referenceNumber = document.getElementById('referenceNumber');
+        const loadingPopularTrades = document.getElementById('loadingPopularTrades');
+        const menuToggle = document.getElementById('menuToggle');
+        const closeMenu = document.getElementById('closeMenu');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        // Event Listeners
+        currentOS.addEventListener('change', function() {
+            populateStorageDropdown(currentStorage, this.value);
+            currentStorage.disabled = this.value === 'all';
+            currentDevice.disabled = true;
+            currentCondition.disabled = true;
+        });
+        
+        currentStorage.addEventListener('change', function() {
+            if (this.value === 'all') {
+                currentDevice.disabled = true;
+                currentCondition.disabled = true;
+            } else {
+                populateDeviceDropdown(currentDevice, currentOS.value, this.value);
+                currentDevice.disabled = false;
+            }
+        });
+        
+        currentDevice.addEventListener('change', function() {
+            currentCondition.disabled = this.value === '';
+            if (this.value !== '') {
+                conditionChecklist.classList.remove('hidden');
+            } else {
+                conditionChecklist.classList.add('hidden');
+            }
+        });
+        
+        currentCondition.addEventListener('change', function() {
+            calculatePriceDifference();
+        });
+        
+        desiredOS.addEventListener('change', function() {
+            populateStorageDropdown(desiredStorage, this.value);
+            desiredStorage.disabled = this.value === 'all';
+            desiredDevice.disabled = true;
+            desiredCondition.disabled = true;
+        });
+        
+        desiredStorage.addEventListener('change', function() {
+            if (this.value === 'all') {
+                desiredDevice.disabled = true;
+                desiredCondition.disabled = true;
+            } else {
+                populateDeviceDropdown(desiredDevice, desiredOS.value, this.value);
+                desiredDevice.disabled = false;
+            }
+        });
+        
+        desiredDevice.addEventListener('change', function() {
+            desiredCondition.disabled = this.value === '';
+            calculatePriceDifference();
+        });
+        
+        desiredCondition.addEventListener('change', function() {
+            calculatePriceDifference();
+        });
+        
+        // Condition checklist event listeners
+        conditionCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', calculatePriceDifference);
+        });
+        
+        tradeButton.addEventListener('click', function() {
+            userDetailsModal.classList.remove('hidden');
+        });
+        
+        closeModal.addEventListener('click', function() {
+            userDetailsModal.classList.add('hidden');
+        });
+        
+        closeConfirmation.addEventListener('click', function() {
+            confirmationModal.classList.add('hidden');
+        });
+        
+        menuToggle.addEventListener('click', function() {
+            mobileMenu.classList.add('active');
+        });
+        
+        closeMenu.addEventListener('click', function() {
+            mobileMenu.classList.remove('active');
+        });
+        
+        // Currency selector
+        currencyOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                currencyOptions.forEach(opt => opt.classList.remove('active'));
+                this.classList.add('active');
+                currentCurrency = this.dataset.currency;
+                updateConversionRateInfo();
+                calculatePriceDifference();
+                updatePopularTrades();
+            });
+        });
+        
+        userDetailsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Generate a random reference number
+            const refNum = 'PM-' + Math.floor(10000000 + Math.random() * 90000000);
+            
+            // Get form values
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const address = document.getElementById('address').value;
+            
+            // Get device information
+            const currentDeviceModel = currentDevice.value;
+            const currentDeviceCondition = currentCondition.value;
+            const desiredDeviceModel = desiredDevice.value;
+            const desiredDeviceCondition = desiredCondition.value;
+            const priceDiff = priceDifference.textContent;
+            
+            // Get checked conditions
+            const checkedConditions = Array.from(document.querySelectorAll('input[name="deviceCondition"]:checked'))
+                .map(checkbox => checkbox.nextElementSibling.textContent.trim());
+            
+            // Create email subject and body
+            const subject = `Trade-In Request: ${currentDeviceModel} to ${desiredDeviceModel}`;
+            const body = `Dear Phone Matrix Team,\n\n` +
+                         `I would like to request a trade-in for my device with the following details:\n\n` +
+                         `**Personal Information:**\n` +
+                         `Full Name: ${fullName}\n` +
+                         `Email: ${email}\n` +
+                         `Phone: ${phone}\n` +
+                         `Shipping Address: ${address}\n\n` +
+                         `**Current Device Details:**\n` +
+                         `Model: ${currentDeviceModel}\n` +
+                         `Condition: ${currentDeviceCondition}\n` +
+                         `Device Issues: ${checkedConditions.length > 0 ? checkedConditions.join(', ') : 'None'}\n\n` +
+                         `**Desired Device Details:**\n` +
+                         `Model: ${desiredDeviceModel}\n` +
+                         `Condition: ${desiredDeviceCondition}\n\n` +
+                         `**Price Difference:** ${priceDiff}\n\n` +
+                         `Reference Number: ${refNum}\n\n` +
+                         `Please let me know the next steps to complete this trade-in.\n\n` +
+                         `Best regards,\n` +
+                         `${fullName}`;
+            
+            // Encode the subject and body for URL
+            const encodedSubject = encodeURIComponent(subject);
+            const encodedBody = encodeURIComponent(body);
+            
+            // Create mailto link
+            const mailtoLink = `mailto:infophonematrix@gmail.com?subject=${encodedSubject}&body=${encodedBody}`;
+            
+            // Open default email client
+            window.location.href = mailtoLink;
+            
+            // Show confirmation
+            userDetailsModal.classList.add('hidden');
+            referenceNumber.textContent = refNum;
+            confirmationModal.classList.remove('hidden');
+            
+            // Reset form
+            userDetailsForm.reset();
+        });
+        
+        // Functions
+        function populateStorageDropdown(dropdown, os) {
+            dropdown.innerHTML = '<option value="all">Select Storage</option>';
+            
+            if (os === 'all') return;
+            
+            const filteredDevices = deviceData.filter(device => device.OS === os);
+            const uniqueStorages = [...new Set(filteredDevices.map(device => device.Storage))];
+            
+            uniqueStorages.forEach(storage => {
+                const option = document.createElement('option');
+                option.value = storage;
+                option.textContent = storage;
+                dropdown.appendChild(option);
+            });
+        }
+        
+        function populateDeviceDropdown(dropdown, os, storage) {
+            dropdown.innerHTML = '<option value="">Select ' + (dropdown === currentDevice ? 'your' : 'desired') + ' device</option>';
+            
+            if (os === 'all') return;
+            
+            const filteredDevices = deviceData.filter(device => device.OS === os && device.Storage === storage);
+            
+            filteredDevices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.Model;
+                const price = convertCurrency(device.TradeInValues['Like New']);
+                option.textContent = `${device.Brand} ${device.Model} (${price})`;
+                option.dataset.price = device.TradeInValues['Like New'];
+                dropdown.appendChild(option);
+            });
+        }
+        
+        function calculatePriceDifference() {
+            // Check if all required fields are selected
+            if (currentDevice.value === '' || currentCondition.value === '' || desiredDevice.value === '' || desiredCondition.value === '') {
+                priceComparison.classList.add('hidden');
+                return;
+            }
+            
+            // Get current device trade-in value
+            const currentDeviceData = deviceData.find(device => device.Model === currentDevice.value);
+            let tradeInValue = currentDeviceData.TradeInValues[currentCondition.value];
+            
+            // Apply automatic $50 deduction
+            tradeInValue -= 50;
+            
+            // Calculate repair deductions
+            let totalRepairDeduction = 0;
+            const checkedConditions = Array.from(document.querySelectorAll('input[name="deviceCondition"]:checked'));
+            
+            checkedConditions.forEach(checkbox => {
+                totalRepairDeduction += repairCosts[checkbox.value];
+            });
+            
+            // Apply repair deductions
+            tradeInValue -= totalRepairDeduction;
+            
+            // Ensure trade-in value doesn't go below 0
+            tradeInValue = Math.max(tradeInValue, 0);
+            
+            // Get desired device price
+            const desiredDeviceData = deviceData.find(device => device.Model === desiredDevice.value);
+            const desiredPrice = desiredDeviceData.TradeInValues[desiredCondition.value];
+            
+            // Calculate difference
+            const difference = desiredPrice - tradeInValue;
+            
+            // Convert values to selected currency
+            const convertedTradeInValue = convertCurrency(tradeInValue);
+            const convertedDesiredPrice = convertCurrency(desiredPrice);
+            const convertedDifference = convertCurrency(Math.abs(difference));
+            const convertedRepairDeduction = convertCurrency(totalRepairDeduction);
+            const convertedAutoDeduction = convertCurrency(50);
+            
+            // Update UI
+            currentDeviceValue.textContent = convertedTradeInValue;
+            currentDeviceInfo.textContent = `${currentDeviceData.Brand} ${currentDeviceData.Model} (${currentCondition.value})`;
+            
+            // Show deductions
+            let deductionsText = '';
+            if (totalRepairDeduction > 0) {
+                deductionsText = `Includes deductions: ${convertedAutoDeduction} (standard) + ${convertedRepairDeduction} (repairs)`;
+            } else {
+                deductionsText = `Includes standard deduction: ${convertedAutoDeduction}`;
+            }
+            repairDeductions.textContent = deductionsText;
+            
+            desiredDevicePrice.textContent = convertedDesiredPrice;
+            desiredDeviceInfo.textContent = `${desiredDeviceData.Brand} ${desiredDeviceData.Model} (${desiredCondition.value})`;
+            
+            priceDifference.textContent = `${difference >= 0 ? '+' : '-'}${convertedDifference}`;
+            
+            // Style difference based on value
+            if (difference > 0) {
+                priceDifference.classList.add('text-red-600');
+                priceDifference.classList.remove('text-green-600');
+                differenceDescription.textContent = 'You will need to pay this amount';
+                differenceDescription.className = 'text-xs text-red-600 mt-1';
+            } else if (difference < 0) {
+                priceDifference.classList.add('text-green-600');
+                priceDifference.classList.remove('text-red-600');
+                differenceDescription.textContent = 'You will receive this amount as credit';
+                differenceDescription.className = 'text-xs text-green-600 mt-1';
+            } else {
+                priceDifference.classList.remove('text-red-600', 'text-green-600');
+                differenceDescription.textContent = 'Even trade - no payment needed';
+                differenceDescription.className = 'text-xs text-gray-600 mt-1';
+            }
+            
+            // Show the comparison section
+            priceComparison.classList.remove('hidden');
+        }
+        
+        function convertCurrency(amount) {
+            const rate = conversionRates[currentCurrency].rate;
+            const symbol = conversionRates[currentCurrency].symbol;
+            const convertedAmount = (amount * rate).toFixed(2);
+            
+            // Format JMD differently (no decimals)
+            if (currentCurrency === 'JMD') {
+                return `${symbol}${Math.round(amount * rate)}`;
+            }
+            
+            return `${symbol}${convertedAmount}`;
+        }
+        
+        function updateConversionRateInfo() {
+            const rate = conversionRates[currentCurrency].rate;
+            const symbol = conversionRates[currentCurrency].symbol;
+            
+            if (currentCurrency === 'USD') {
+                conversionRateInfo.textContent = 'Conversion rate: 1 USD = 1 USD';
+            } else {
+                conversionRateInfo.textContent = `Conversion rate: 1 USD = ${symbol}${rate.toFixed(2)} (${currentCurrency})`;
+            }
+        }
+        
+        function populatePopularTrades() {
+            // Create some popular trade combinations
+            const popularCombinations = [];
+            
+            // Find some iOS devices
+            const iOSDevices = deviceData.filter(d => d.OS === 'iOS');
+            const androidDevices = deviceData.filter(d => d.OS === 'Android');
+            
+            // Add iOS to iOS trades
+            if (iOSDevices.length >= 2) {
+                popularCombinations.push({
+                    current: iOSDevices[0].Model,
+                    condition: 'Good',
+                    desired: iOSDevices[1].Model,
+                    desiredCondition: 'Like New'
+                });
+                
+                if (iOSDevices.length >= 3) {
+                    popularCombinations.push({
+                        current: iOSDevices[1].Model,
+                        condition: 'Like New',
+                        desired: iOSDevices[2].Model,
+                        desiredCondition: 'Like New'
+                    });
+                }
+            }
+            
+            // Add Android to Android trades
+            if (androidDevices.length >= 2) {
+                popularCombinations.push({
+                    current: androidDevices[0].Model,
+                    condition: 'Good',
+                    desired: androidDevices[1].Model,
+                    desiredCondition: 'Like New'
+                });
+                
+                if (androidDevices.length >= 3) {
+                    popularCombinations.push({
+                        current: androidDevices[1].Model,
+                        condition: 'Like New',
+                        desired: androidDevices[2].Model,
+                        desiredCondition: 'Like New'
+                    });
+                }
+            }
+            
+            // Add cross-platform trades if available
+            if (iOSDevices.length > 0 && androidDevices.length > 0) {
+                popularCombinations.push({
+                    current: iOSDevices[0].Model,
+                    condition: 'Fair',
+                    desired: androidDevices[0].Model,
+                    desiredCondition: 'Like New'
+                });
+                
+                popularCombinations.push({
+                    current: androidDevices[0].Model,
+                    condition: 'Fair',
+                    desired: iOSDevices[0].Model,
+                    desiredCondition: 'Like New'
+                });
+            }
+            
+            popularCombinations.forEach(combo => {
+                const currentDeviceData = deviceData.find(d => d.Model === combo.current);
+                const desiredDeviceData = deviceData.find(d => d.Model === combo.desired);
+                
+                if (!currentDeviceData || !desiredDeviceData) return;
+                
+                let tradeInValue = currentDeviceData.TradeInValues[combo.condition];
+                // Apply standard $50 deduction
+                tradeInValue -= 50;
+                const difference = desiredDeviceData.TradeInValues[combo.desiredCondition] - tradeInValue;
+                
+                const card = document.createElement('div');
+                card.className = 'device-card bg-white p-4 rounded-lg cursor-pointer hover:bg-pink-50 transition';
+                card.dataset.combo = JSON.stringify(combo);
+                card.addEventListener('click', function() {
+                    // Set the form values to this popular trade
+                    currentOS.value = currentDeviceData.OS;
+                    populateStorageDropdown(currentStorage, currentDeviceData.OS);
+                    currentStorage.value = currentDeviceData.Storage;
+                    populateDeviceDropdown(currentDevice, currentDeviceData.OS, currentDeviceData.Storage);
+                    currentDevice.value = currentDeviceData.Model;
+                    currentCondition.value = combo.condition;
+                    
+                    desiredOS.value = desiredDeviceData.OS;
+                    populateStorageDropdown(desiredStorage, desiredDeviceData.OS);
+                    desiredStorage.value = desiredDeviceData.Storage;
+                    populateDeviceDropdown(desiredDevice, desiredDeviceData.OS, desiredDeviceData.Storage);
+                    desiredDevice.value = desiredDeviceData.Model;
+                    desiredCondition.value = combo.desiredCondition;
+                    
+                    // Show condition checklist
+                    conditionChecklist.classList.remove('hidden');
+                    
+                    // Trigger calculation
+                    calculatePriceDifference();
+                    
+                    // Scroll to the comparison section
+                    priceComparison.scrollIntoView({ behavior: 'smooth' });
+                });
+                
+                // Initial render
+                updatePopularTradeCard(card, combo, currentDeviceData, desiredDeviceData);
+                
+                popularTrades.appendChild(card);
+            });
+            
+            // Hide loading spinner
+            loadingPopularTrades.classList.add('hidden');
+        }
+        
+        function updatePopularTradeCard(card, combo, currentDeviceData, desiredDeviceData) {
+            let tradeInValue = currentDeviceData.TradeInValues[combo.condition];
+            // Apply standard $50 deduction
+            tradeInValue -= 50;
+            const difference = desiredDeviceData.TradeInValues[combo.desiredCondition] - tradeInValue;
+            const convertedDifference = convertCurrency(Math.abs(difference));
+            
+            card.innerHTML = `
+                <div class="flex items-center mb-2">
+                    <div class="os-indicator ${currentDeviceData.OS === 'iOS' ? 'ios-indicator' : 'android-indicator'}">
+                        <i class="${currentDeviceData.OS === 'iOS' ? 'fab fa-apple' : 'fab fa-android'}"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-800">${currentDeviceData.Model}</h3>
+                        <p class="text-xs text-gray-500">${combo.condition} condition</p>
+                    </div>
+                </div>
+                <div class="flex justify-center my-2">
+                    <i class="fas fa-exchange-alt text-pink-500"></i>
+                </div>
+                <div class="flex items-center mb-3">
+                    <div class="os-indicator ${desiredDeviceData.OS === 'iOS' ? 'ios-indicator' : 'android-indicator'}">
+                        <i class="${desiredDeviceData.OS === 'iOS' ? 'fab fa-apple' : 'fab fa-android'}"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-800">${desiredDeviceData.Model}</h3>
+                        <p class="text-xs text-gray-500">${combo.desiredCondition}</p>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold ${difference >= 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
+                        ${difference >= 0 ? 'Pay' : 'Get'} ${convertedDifference}
+                    </span>
+                </div>
+            `;
+        }
+        
+        function updatePopularTrades() {
+            const cards = document.querySelectorAll('#popularTrades .device-card');
+            cards.forEach(card => {
+                const combo = JSON.parse(card.dataset.combo);
+                const currentDeviceData = deviceData.find(d => d.Model === combo.current);
+                const desiredDeviceData = deviceData.find(d => d.Model === combo.desired);
+                
+                if (currentDeviceData && desiredDeviceData) {
+                    updatePopularTradeCard(card, combo, currentDeviceData, desiredDeviceData);
+                }
+            });
+        }
+        
+        // Fetch device data from Google Sheets
+        async function fetchDeviceData() {
+            try {
+                const response = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vQL9a5fmRtcYCgO0q9VHHSvIIQM_kJryefPZDQmzbCoPuw7jtlpMgLVV5JEgoi60lAtjIbZjD46QVJw/pub?output=csv');
+                const csvData = await response.text();
+                
+                // Parse CSV data
+                const lines = csvData.split('\n');
+                const headers = lines[0].split(',');
+                
+                // Temporary storage for devices by model
+                const devicesByModel = {};
+                
+                // Process each line (skip header)
+                for (let i = 1; i < lines.length; i++) {
+                    const currentLine = lines[i].split(',');
+                    if (currentLine.length < headers.length) continue;
+                    
+                    const device = {
+                        OS: currentLine[0].trim(),
+                        Brand: currentLine[1].trim(),
+                        Model: currentLine[2].trim(),
+                        Condition: currentLine[3].trim(),
+                        Price: parseFloat(currentLine[4].trim()),
+                        Storage: currentLine[5].trim(),
+                        Color: currentLine[6].trim()
+                    };
+                    
+                    // Initialize device in dictionary if not exists
+                    if (!devicesByModel[device.Model]) {
+                        devicesByModel[device.Model] = {
+                            OS: device.OS,
+                            Brand: device.Brand,
+                            Model: device.Model,
+                            Storage: device.Storage,
+                            Color: device.Color,
+                            Price: device.Price, // Assuming the first price is the "New" price
+                            TradeInValues: {}
+                        };
+                    }
+                    
+                    // Add trade-in value for this condition
+                    devicesByModel[device.Model].TradeInValues[device.Condition] = device.Price;
+                }
+                
+                // Convert dictionary to array
+                deviceData = Object.values(devicesByModel);
+                
+                // Initialize the UI
+                updateConversionRateInfo();
+                populatePopularTrades();
+                
+            } catch (error) {
+                console.error('Error fetching device data:', error);
+                // Fallback to some default data if fetch fails
+                deviceData = [
+                    { 
+                        OS: 'iOS', 
+                        Brand: 'Apple', 
+                        Model: 'iPhone 15 Pro', 
+                        Storage: '128GB',
+                        Price: 999,
+                        TradeInValues: {'Like New': 750, 'Good': 600, 'Fair': 450, 'Poor': 300 },
+                        Color: 'Titanium' 
+                    },
+                    { 
+                        OS: 'iOS', 
+                        Brand: 'Apple', 
+                        Model: 'iPhone 15', 
+                        Storage: '128GB',
+                        Price: 799,
+                        TradeInValues: { 'Like New': 600, 'Good': 500, 'Fair': 400, 'Poor': 250 },
+                        Color: 'Black' 
+                    },
+                    { 
+                        OS: 'Android', 
+                        Brand: 'Samsung', 
+                        Model: 'Galaxy S23 Ultra', 
+                        Storage: '256GB',
+                        Price: 1199,
+                        TradeInValues: { 'Like New': 900, 'Good': 750, 'Fair': 600, 'Poor': 400 },
+                        Color: 'Phantom Black' 
+                    },
+                    { 
+                        OS: 'Android', 
+                        Brand: 'Google', 
+                        Model: 'Pixel 8 Pro', 
+                        Storage: '128GB',
+                        Price: 999,
+                        TradeInValues: { 'Like New': 750, 'Good': 600, 'Fair': 450, 'Poor': 300 },
+                        Color: 'Obsidian' 
+                    }
+                ];
+                
+                updateConversionRateInfo();
+                populatePopularTrades();
+            }
+        }
+        
+        // Initialize
+        fetchDeviceData();
+    </script>
+</body>
+</html>
